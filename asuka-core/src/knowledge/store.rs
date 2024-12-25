@@ -211,15 +211,18 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
         self.conn
             .call(move |conn| {
                 conn.query_row(
-                    "INSERT INTO messages (id, channel_id, account_id, content, role, created_at) 
-                 VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)
+                    "INSERT INTO messages (id, source, source_id, channel_type, channel_id, account_id, content, role, created_at) 
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
                  ON CONFLICT (id) DO UPDATE SET 
-                     channel_id = ?2, 
-                     account_id = ?3, 
-                     content = ?4, 
-                     role = ?5, 
+                     source = ?2, 
+                     source_id = ?3, 
+                     channel_type = ?4, 
+                     channel_id = ?5, 
+                     account_id = ?6, 
+                     content = ?7, 
+                     role = ?8, 
                      created_at = CURRENT_TIMESTAMP
-                 RETURNING id",
+				RETURNING id",
                     rusqlite::params![
                         msg.id,
                         msg.channel_id,
