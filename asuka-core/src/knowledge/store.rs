@@ -359,6 +359,17 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
             .map_err(|e| anyhow::anyhow!(e))
     }
 
+    pub async fn add_message_embeddings(&self, msg: Message) -> anyhow::Result<()> {
+        let embeddings = EmbeddingsBuilder::new(self.embedding_model.clone())
+            .documents(vec![msg.clone()])?
+            .build()
+            .await?;
+
+        let _ = self.message_store.add_rows(embeddings).await;
+
+        Ok(())
+    }
+
     pub async fn add_documents<'a, I>(&mut self, documents: I) -> anyhow::Result<()>
     where
         I: IntoIterator<Item = Document>,
