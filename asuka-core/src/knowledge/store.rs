@@ -204,6 +204,33 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
             .map_err(|e| SqliteError::DatabaseError(Box::new(e)))
     }
 
+    pub async fn create_message_without_embeddings(
+        &self,
+        msg: Message,
+    ) -> Result<i64, SqliteError> {
+        self.conn
+            .call(move |conn| {
+                conn.query_row(
+                    "INSERT INTO messages (id, channel_id, account_id, content, role, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, CURRENT_TIMESTAMP)
+                     ON CONFLICT(id) DO UPDATE SET 
+                         updated_at = CURRENT_TIMESTAMP
+                     RETURNING id",
+                    rusqlite::params![
+                        msg.id,
+                        msg.channel_id,
+                        msg.account_id,
+                        msg.content,
+                        msg.role
+                    ],
+                    |row| row.get(0),
+                )
+                .map_err(tokio_rusqlite::Error::from)
+            })
+            .await
+            .map_err(|e| SqliteError::DatabaseError(Box::new(e)))
+    }
+
     pub async fn create_message(&self, msg: Message) -> anyhow::Result<i64> {
         let embeddings = EmbeddingsBuilder::new(self.embedding_model.clone())
             .documents(vec![msg.clone()])?
