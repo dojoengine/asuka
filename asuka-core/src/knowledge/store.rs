@@ -218,7 +218,8 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
                      account_id = ?3, 
                      content = ?4, 
                      role = ?5, 
-                     created_at = CURRENT_TIMESTAMP",
+                     created_at = CURRENT_TIMESTAMP
+                 RETURNING id",
                     rusqlite::params![
                         msg.id,
                         msg.channel_id,
