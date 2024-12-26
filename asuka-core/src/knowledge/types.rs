@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Source {
     Discord,
     Telegram,
@@ -40,6 +41,7 @@ impl FromStr for Source {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum ChannelType {
     DirectMessage,
     Text,

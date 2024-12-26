@@ -118,6 +118,18 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
             .map_err(|e| SqliteError::DatabaseError(Box::new(e)))
     }
 
+    pub async fn get_account_by_account_id(
+        &self,
+        account_id: String,
+    ) -> Result<Option<Account>, SqliteError> {
+        self.conn
+            .call(move |conn| {
+                Ok(conn.query_row("SELECT id, name, source, created_at, updated_at FROM accounts WHERE source_id = ?1", rusqlite::params![account_id], |row| Account::try_from(row)).optional()?)
+            })
+            .await
+            .map_err(|e| SqliteError::DatabaseError(Box::new(e)))
+    }
+
     pub async fn create_channel(
         &self,
         channel_id: String,
@@ -204,38 +216,30 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
             .map_err(|e| SqliteError::DatabaseError(Box::new(e)))
     }
 
-    pub async fn create_message_without_embeddings(
-        &self,
-        msg: Message,
-    ) -> Result<i64, SqliteError> {
+    pub async fn create_message_without_embeddings(&self, msg: Message) -> Result<(), SqliteError> {
         self.conn
             .call(move |conn| {
-                conn.query_row(
+                conn.execute(
                     "INSERT INTO messages (id, source, source_id, channel_type, channel_id, account_id, content, role, created_at) 
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
-                 ON CONFLICT (id) DO UPDATE SET 
-                     source = ?2, 
-                     source_id = ?3, 
-                     channel_type = ?4, 
-                     channel_id = ?5, 
-                     account_id = ?6, 
-                     content = ?7, 
-                     role = ?8, 
-                     created_at = CURRENT_TIMESTAMP
-				RETURNING id",
+						VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
+						ON CONFLICT (id) DO UPDATE SET 
+							content = ?7",
                     rusqlite::params![
                         msg.id,
+                        msg.source.as_str(),
+                        msg.source_id,
+                        msg.channel_type.as_str(),
                         msg.channel_id,
                         msg.account_id,
                         msg.content,
                         msg.role
                     ],
-                    |row| row.get(0),
                 )
                 .map_err(tokio_rusqlite::Error::from)
             })
             .await
-            .map_err(|e| SqliteError::DatabaseError(Box::new(e)))
+            .map_err(|e| SqliteError::DatabaseError(Box::new(e)))?;
+        Ok(())
     }
 
     pub async fn create_message(&self, msg: Message) -> anyhow::Result<i64> {
@@ -372,7 +376,7 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
             .build()
             .await?;
 
-        let _ = self.message_store.add_rows(embeddings).await;
+        self.message_store.add_rows(embeddings).await?;
 
         Ok(())
     }

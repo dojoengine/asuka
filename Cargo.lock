@@ -3429,8 +3429,8 @@ dependencies = [
 
 [[package]]
 name = "rig-core"
-version = "0.5.0"
-source = "git+https://github.com/0xPlaygrounds/rig#da8b5d9c56cc45438a50ffb53ae456bc2fdd076f"
+version = "0.6.0"
+source = "git+https://github.com/edisontim/rig?branch=fix/tool-use#d4334ed82204bd2f0b1b226bf9bf5a935330914d"
 dependencies = [
  "futures",
  "glob",
@@ -3447,7 +3447,7 @@ dependencies = [
 [[package]]
 name = "rig-derive"
 version = "0.1.0"
-source = "git+https://github.com/0xPlaygrounds/rig#da8b5d9c56cc45438a50ffb53ae456bc2fdd076f"
+source = "git+https://github.com/edisontim/rig?branch=fix/tool-use#d4334ed82204bd2f0b1b226bf9bf5a935330914d"
 dependencies = [
  "indoc",
  "proc-macro2",
@@ -3457,8 +3457,8 @@ dependencies = [
 
 [[package]]
 name = "rig-sqlite"
-version = "0.1.0"
-source = "git+https://github.com/0xPlaygrounds/rig#da8b5d9c56cc45438a50ffb53ae456bc2fdd076f"
+version = "0.1.1"
+source = "git+https://github.com/edisontim/rig?branch=fix/tool-use#d4334ed82204bd2f0b1b226bf9bf5a935330914d"
 dependencies = [
  "chrono",
  "rig-core",
