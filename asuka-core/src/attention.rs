@@ -142,7 +142,7 @@ impl<M: CompletionModel> Attention<M> {
                         AttentionCommand::Ignore
                     }
                 }
-                ModelChoice::ToolCall(_, _) => AttentionCommand::Ignore,
+                ModelChoice::ToolCall(_, _, _) => AttentionCommand::Ignore,
             },
             Err(_) => AttentionCommand::Ignore,
         }
