@@ -18,3 +18,4 @@
 
 *.sqlite
 eliza-prompt.txt
+.sources

@@ -3,4 +3,5 @@ pub mod character;
 pub mod discord;
 pub mod knowledge;
 pub mod loaders;
+pub mod ops;
 pub mod tools;

@@ -1,16 +1,15 @@
-use asuka_core::attention::{Attention, AttentionConfig};
-use asuka_core::knowledge::Document;
 use clap::{command, Parser};
-use rig::providers::{self, openai};
-
-use asuka_core::character;
-use asuka_core::init_logging;
-use asuka_core::knowledge::KnowledgeBase;
-use asuka_core::loaders::github::GitLoader;
-use asuka_core::{agent::Agent, clients::discord::DiscordClient};
+use rig::providers::{self, anthropic, openai};
 use sqlite_vec::sqlite3_vec_init;
 use tokio_rusqlite::ffi::sqlite3_auto_extension;
 use tokio_rusqlite::Connection;
+
+use asuka_core::attention::{Attention, AttentionConfig};
+use asuka_core::character;
+use asuka_core::init_logging;
+use asuka_core::knowledge::KnowledgeBase;
+use asuka_core::loaders::{MultiLoader, MultiLoaderConfig};
+use asuka_core::{agent::Agent, clients::discord::DiscordClient};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -35,13 +34,21 @@ struct Args {
     #[arg(long, env = "OPENAI_API_KEY")]
     openai_api_key: String,
 
-    /// GitHub repository URL
-    #[arg(long, default_value = "https://github.com/cartridge-gg/docs")]
-    github_repo: String,
+    /// Anthropic API token (can also be set via ANTHROPIC_API_KEY env var)
+    #[arg(long, env = "ANTHROPIC_API_KEY")]
+    anthropic_api_key: String,
 
-    /// Local path to clone GitHub repository
-    #[arg(long, default_value = ".repo")]
-    github_path: String,
+    /// List of sources in format type:url (e.g. github:https://github.com/org/repo site:https://example.com)
+    #[arg(
+        long,
+        value_delimiter = ' ',
+        default_value = "github:https://github.com/cartridge-gg/docs site:https://contraptions.venkateshrao.com/p/towards-a-metaphysics-of-worlds"
+    )]
+    sources: Vec<String>,
+
+    /// Local path to store downloaded content
+    #[arg(long, default_value = ".sources")]
+    sources_path: String,
 }
 
 #[tokio::main]
@@ -51,17 +58,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = Args::parse();
 
-    let repo = GitLoader::new(args.github_repo, &args.github_path)?;
-
     let character_content =
         std::fs::read_to_string(&args.character).expect("Failed to read character file");
     let character: character::Character =
         toml::from_str(&character_content).expect("Failed to parse character TOML");
 
+    // Initialize clients
     let oai = providers::openai::Client::new(&args.openai_api_key);
+    let anthropic = anthropic::ClientBuilder::new(&args.anthropic_api_key).build();
+
     let embedding_model = oai.embedding_model(openai::TEXT_EMBEDDING_3_SMALL);
-    let completion_model = oai.completion_model(openai::GPT_4O);
-    let should_respond_completion_model = oai.completion_model(openai::GPT_35_TURBO_0125);
+    let completion_model = anthropic.completion_model(anthropic::CLAUDE_3_5_SONNET);
+    let small_completion_model = anthropic.completion_model(anthropic::CLAUDE_3_HAIKU);
 
     // Initialize the `sqlite-vec`extension
     // See: https://alexgarcia.xyz/sqlite-vec/rust.html
@@ -72,19 +80,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let conn = Connection::open(args.db_path).await?;
     let mut knowledge = KnowledgeBase::new(conn.clone(), embedding_model).await?;
 
+    let loader = MultiLoader::new(
+        MultiLoaderConfig {
+            sources_path: args.sources_path,
+        },
+        completion_model.clone(),
+    );
+
     knowledge
-        .add_documents(
-            repo.with_dir("src/pages/vrf")?
-                .read_with_path()
-                .ignore_errors()
-                .into_iter()
-                .map(|(path, content)| Document {
-                    id: path.to_string_lossy().to_string(),
-                    source_id: "github".to_string(),
-                    content,
-                    created_at: chrono::Utc::now(),
-                }),
-        )
+        .add_documents(loader.load_sources(args.sources).await?)
         .await?;
 
     let agent = Agent::new(character, completion_model, knowledge);
@@ -93,7 +97,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         bot_names: vec![agent.character.name.clone()],
         ..Default::default()
     };
-    let attention = Attention::new(config, should_respond_completion_model);
+    let attention = Attention::new(config, small_completion_model);
 
     let discord = DiscordClient::new(agent, attention);
     discord.start(&args.discord_api_token).await?;
