@@ -3,8 +3,9 @@ members = ["asuka-core", "asuka-starknet", "examples"]
 resolver = "2"
 
 [workspace.dependencies]
-rig-core = { git = "https://github.com/0xPlaygrounds/rig", default-features = false, features = ["derive"] }
-rig-sqlite = { git = "https://github.com/0xPlaygrounds/rig", default-features = false }
+rig-core = { git = "https://github.com/edisontim/rig", branch = "fix/tool-use", default-features = false, features = ["derive"] }
+rig-sqlite = { git = "https://github.com/edisontim/rig", branch = "fix/tool-use", default-features = false }
+
 tokio-rusqlite = { git = "https://github.com/programatik29/tokio-rusqlite", version = "0.6.0", features = [
     "bundled",
 ] }
