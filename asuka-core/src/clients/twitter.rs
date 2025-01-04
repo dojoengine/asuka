@@ -11,8 +11,11 @@ use rig::{
 use std::collections::HashSet;
 use tracing::{debug, error, info};
 use twitter::{authorization::Authorization, TwitterApi};
-use twitter_v2::{self as twitter, authorization::{BearerToken, Oauth1aToken}};
 use twitter_v2::data::ReferencedTweetKind;
+use twitter_v2::{
+    self as twitter,
+    authorization::{BearerToken, Oauth1aToken},
+};
 
 const MAX_TWEET_LENGTH: usize = 280;
 const MAX_HISTORY_TWEETS: i64 = 10;
@@ -43,11 +46,10 @@ impl From<twitter::Tweet> for Message {
                 .unwrap_or_else(|| "0".to_string()),
             role: "user".to_string(),
             content: tweet.text.clone(),
-            created_at,
+            created_at: Some(created_at),
         }
     }
 }
-
 
 impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M, E, Oauth1aToken> {
     pub fn new(agent: Agent<M, E>, attention: Attention<M>, oauth1a_token: Oauth1aToken) -> Self {
@@ -74,7 +76,9 @@ impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static> TwitterClient<M,
     }
 }
 
-impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static, A: Authorization> TwitterClient<M, E, A> {
+impl<M: CompletionModel + 'static, E: EmbeddingModel + 'static, A: Authorization>
+    TwitterClient<M, E, A>
+{
     pub async fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
         info!("Starting Twitter bot");
         self.listen_for_mentions().await

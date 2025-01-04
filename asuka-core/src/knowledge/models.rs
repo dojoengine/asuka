@@ -11,7 +11,7 @@ pub struct Document {
     pub source_id: String,
     #[embed]
     pub content: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -19,8 +19,8 @@ pub struct Account {
     pub id: i64,
     pub name: String,
     pub source: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -28,8 +28,8 @@ pub struct Conversation {
     pub id: String,
     pub user_id: String,
     pub title: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[derive(Embed, Clone, Debug, serde::Deserialize)]
@@ -43,7 +43,7 @@ pub struct Message {
     pub role: String,
     #[embed]
     pub content: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -53,8 +53,8 @@ pub struct Channel {
     pub channel_type: String,
     pub source: String,
     pub name: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 // Implement the table traits
@@ -81,7 +81,6 @@ impl SqliteVectorStoreTable for Document {
             ("id", Box::new(self.id.clone())),
             ("source_id", Box::new(self.source_id.clone())),
             ("content", Box::new(self.content.clone())),
-            ("created_at", Box::new(self.created_at.to_rfc3339())),
         ]
     }
 }
@@ -122,7 +121,6 @@ impl SqliteVectorStoreTable for Message {
             ("account_id", Box::new(self.account_id.clone())),
             ("role", Box::new(self.role.clone())),
             ("content", Box::new(self.content.clone())),
-            ("created_at", Box::new(self.created_at.to_rfc3339())),
         ]
     }
 }
@@ -240,8 +238,6 @@ impl SqliteVectorStoreTable for Channel {
             ("id", Box::new(self.id.clone())),
             ("name", Box::new(self.name.clone())),
             ("source", Box::new(self.source.clone())),
-            ("created_at", Box::new(self.created_at.to_rfc3339())),
-            ("updated_at", Box::new(self.updated_at.to_rfc3339())),
         ]
     }
 }

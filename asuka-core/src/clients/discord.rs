@@ -60,7 +60,7 @@ impl From<Message> for knowledge::Message {
             account_id: msg.author.id.to_string(),
             role: "user".to_string(),
             content: msg.content.clone(),
-            created_at: *msg.timestamp,
+            created_at: Some(*msg.timestamp),
         }
     }
 }

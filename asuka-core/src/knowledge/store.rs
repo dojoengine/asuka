@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use rig::{
     embeddings::{EmbeddingModel, EmbeddingsBuilder},
     vector_store::VectorStoreError,
@@ -107,8 +108,8 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
                         id: row.get(0)?,
                         name: row.get(1)?,
                         source: row.get(2)?,
-                        created_at: row.get::<_, String>(3)?.parse().unwrap(),
-                        updated_at: row.get::<_, String>(4)?.parse().unwrap(),
+                        created_at: Some(row.get::<_, String>(3)?.parse::<DateTime<Utc>>().unwrap()),
+                        updated_at: Some(row.get::<_, String>(4)?.parse::<DateTime<Utc>>().unwrap()),
                     })
                 }).optional()?;
 

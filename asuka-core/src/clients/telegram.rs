@@ -61,7 +61,7 @@ impl From<teloxide::types::Message> for knowledge::Message {
             account_id: user_id,
             role: "user".to_string(),
             content: msg.text().unwrap_or_default().to_string(),
-            created_at: msg.date,
+            created_at: Some(msg.date),
         }
     }
 }
