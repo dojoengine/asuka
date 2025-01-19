@@ -222,9 +222,9 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
             .call(move |conn| {
                 conn.execute(
                     "INSERT INTO messages (id, source, source_id, channel_type, channel_id, account_id, content, role, created_at) 
-						VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
-						ON CONFLICT (id) DO UPDATE SET 
-							content = ?7",
+                        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
+                        ON CONFLICT (id) DO UPDATE SET 
+                            content = ?7",
                     rusqlite::params![
                         msg.id,
                         msg.source.as_str(),
@@ -262,7 +262,7 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
                      channel_id = ?2, 
                      account_id = ?3, 
                      content = ?4, 
-                     role = ?5, 
+                     role = ?5,
                      created_at = CURRENT_TIMESTAMP",
                     [
                         &msg.id,
@@ -297,7 +297,7 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
 
     pub async fn get_recent_messages_in_channel(
         &self,
-        channel_id: i64,
+        channel_id: String,
         limit: usize,
     ) -> Result<Vec<Message>, SqliteError> {
         self.conn
