@@ -3516,8 +3516,8 @@ dependencies = [
 
 [[package]]
 name = "rig-core"
-version = "0.6.0"
-source = "git+https://github.com/edisontim/rig?branch=fix/tool-use#991beabf29b29d4765425bf796ca7fae6ec46012"
+version = "0.6.1"
+source = "git+https://github.com/0xPlaygrounds/rig?rev=8ef09fc#8ef09fc3bd54371386aac89f6b2e5dd8f3a59ecd"
 dependencies = [
  "futures",
  "glob",
@@ -3535,7 +3535,7 @@ dependencies = [
 [[package]]
 name = "rig-derive"
 version = "0.1.0"
-source = "git+https://github.com/edisontim/rig?branch=fix/tool-use#991beabf29b29d4765425bf796ca7fae6ec46012"
+source = "git+https://github.com/0xPlaygrounds/rig?rev=8ef09fc#8ef09fc3bd54371386aac89f6b2e5dd8f3a59ecd"
 dependencies = [
  "indoc",
  "proc-macro2",
@@ -3545,8 +3545,8 @@ dependencies = [
 
 [[package]]
 name = "rig-sqlite"
-version = "0.1.1"
-source = "git+https://github.com/edisontim/rig?branch=fix/tool-use#991beabf29b29d4765425bf796ca7fae6ec46012"
+version = "0.1.2"
+source = "git+https://github.com/0xPlaygrounds/rig?rev=8ef09fc#8ef09fc3bd54371386aac89f6b2e5dd8f3a59ecd"
 dependencies = [
  "chrono",
  "rig-core",
@@ -4881,7 +4881,8 @@ dependencies = [
 [[package]]
 name = "tokio-rusqlite"
 version = "0.6.0"
-source = "git+https://github.com/programatik29/tokio-rusqlite#168e9c47fd6c7c9f8032b660f62084e16ade7bac"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b65501378eb676f400c57991f42cbd0986827ab5c5200c53f206d710fb32a945"
 dependencies = [
  "crossbeam-channel",
  "rusqlite",
