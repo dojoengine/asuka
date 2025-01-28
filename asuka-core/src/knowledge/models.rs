@@ -19,11 +19,10 @@ pub struct Document {
 #[derive(Debug, serde::Deserialize)]
 pub struct Account {
     pub id: i64,
+    pub source_id: String,
     pub name: String,
     pub source: String,
-    #[serde(deserialize_with = "deserialize_datetime")]
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
-    #[serde(deserialize_with = "deserialize_datetime")]
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -162,9 +161,10 @@ impl TryFrom<&Row<'_>> for Account {
         Ok(Account {
             id: row.get(0)?,
             name: row.get(1)?,
-            source: row.get(2)?,
-            created_at: row.get(3)?,
-            updated_at: row.get(4)?,
+            source_id: row.get(2)?,
+            source: row.get(3)?,
+            created_at: row.get(4)?,
+            updated_at: row.get(5)?,
         })
     }
 }
