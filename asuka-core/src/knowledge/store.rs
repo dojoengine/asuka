@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use rig::{
     embeddings::{EmbeddingModel, EmbeddingsBuilder},
     vector_store::VectorStoreError,
@@ -104,13 +103,7 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
                 )?;
 
                 let account = stmt.query_row(rusqlite::params![source], |row| {
-                    Ok(Account {
-                        id: row.get(0)?,
-                        name: row.get(1)?,
-                        source: row.get(2)?,
-                        created_at: Some(row.get::<_, String>(3)?.parse::<DateTime<Utc>>().unwrap()),
-                        updated_at: Some(row.get::<_, String>(4)?.parse::<DateTime<Utc>>().unwrap()),
-                    })
+                    Account::try_from(row).map_err( rusqlite::Error::from)
                 }).optional()?;
 
                 Ok(account)
