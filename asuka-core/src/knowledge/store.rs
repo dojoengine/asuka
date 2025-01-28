@@ -98,13 +98,13 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
     pub async fn get_user_by_source(&self, source: String) -> Result<Option<Account>, SqliteError> {
         self.conn
             .call(move |conn| {
-                let mut stmt = conn.prepare(
-                    "SELECT source_id, name, source, created_at, updated_at FROM accounts WHERE source = ?1"
-                )?;
+                let mut stmt = conn.prepare("SELECT * FROM accounts WHERE source = ?1")?;
 
-                let account = stmt.query_row(rusqlite::params![source], |row| {
-                    Account::try_from(row).map_err( rusqlite::Error::from)
-                }).optional()?;
+                let account = stmt
+                    .query_row(rusqlite::params![source], |row| {
+                        Account::try_from(row).map_err(rusqlite::Error::from)
+                    })
+                    .optional()?;
 
                 Ok(account)
             })
@@ -118,7 +118,13 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
     ) -> Result<Option<Account>, SqliteError> {
         self.conn
             .call(move |conn| {
-                Ok(conn.query_row("SELECT id, name, source, created_at, updated_at FROM accounts WHERE source_id = ?1", rusqlite::params![account_id], |row| Account::try_from(row)).optional()?)
+                Ok(conn
+                    .query_row(
+                        "SELECT * FROM accounts WHERE source_id = ?1",
+                        rusqlite::params![account_id],
+                        |row| Account::try_from(row),
+                    )
+                    .optional()?)
             })
             .await
             .map_err(|e| SqliteError::DatabaseError(Box::new(e)))
