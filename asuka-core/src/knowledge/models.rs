@@ -21,7 +21,9 @@ pub struct Account {
     pub id: i64,
     pub name: String,
     pub source: String,
+    #[serde(deserialize_with = "deserialize_datetime")]
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+    #[serde(deserialize_with = "deserialize_datetime")]
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
