@@ -1,9 +1,11 @@
 use std::str::FromStr;
 
 use super::types::{ChannelType, Source};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use rig::Embed;
 use rig_sqlite::{Column, ColumnValue, SqliteVectorStoreTable};
 use rusqlite::Row;
+use serde::{Deserialize, Deserializer};
 
 #[derive(Embed, Clone, Debug)]
 pub struct Document {
@@ -17,6 +19,7 @@ pub struct Document {
 #[derive(Debug, serde::Deserialize)]
 pub struct Account {
     pub id: i64,
+    pub source_id: String,
     pub name: String,
     pub source: String,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -43,9 +46,22 @@ pub struct Message {
     pub role: String,
     #[embed]
     pub content: String,
+    #[serde(deserialize_with = "deserialize_datetime")]
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
+fn deserialize_datetime<'de, D>(deserializer: D) -> Result<Option<DateTime<Utc>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = Option::<String>::deserialize(deserializer)?;
+    s.map(|date_str| {
+        NaiveDateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S")
+            .map(|naive_dt| DateTime::<Utc>::from_naive_utc_and_offset(naive_dt, Utc))
+            .map_err(serde::de::Error::custom)
+    })
+    .transpose()
+}
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct Channel {
     pub id: String,
@@ -145,9 +161,10 @@ impl TryFrom<&Row<'_>> for Account {
         Ok(Account {
             id: row.get(0)?,
             name: row.get(1)?,
-            source: row.get(2)?,
-            created_at: row.get(3)?,
-            updated_at: row.get(4)?,
+            source_id: row.get(2)?,
+            source: row.get(3)?,
+            created_at: row.get(4)?,
+            updated_at: row.get(5)?,
         })
     }
 }

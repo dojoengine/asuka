@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use rig::{
     embeddings::{EmbeddingModel, EmbeddingsBuilder},
     vector_store::VectorStoreError,
@@ -99,19 +98,13 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
     pub async fn get_user_by_source(&self, source: String) -> Result<Option<Account>, SqliteError> {
         self.conn
             .call(move |conn| {
-                let mut stmt = conn.prepare(
-                    "SELECT source_id, name, source, created_at, updated_at FROM accounts WHERE source = ?1"
-                )?;
+                let mut stmt = conn.prepare("SELECT * FROM accounts WHERE source = ?1")?;
 
-                let account = stmt.query_row(rusqlite::params![source], |row| {
-                    Ok(Account {
-                        id: row.get(0)?,
-                        name: row.get(1)?,
-                        source: row.get(2)?,
-                        created_at: Some(row.get::<_, String>(3)?.parse::<DateTime<Utc>>().unwrap()),
-                        updated_at: Some(row.get::<_, String>(4)?.parse::<DateTime<Utc>>().unwrap()),
+                let account = stmt
+                    .query_row(rusqlite::params![source], |row| {
+                        Account::try_from(row).map_err(rusqlite::Error::from)
                     })
-                }).optional()?;
+                    .optional()?;
 
                 Ok(account)
             })
@@ -125,7 +118,13 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
     ) -> Result<Option<Account>, SqliteError> {
         self.conn
             .call(move |conn| {
-                Ok(conn.query_row("SELECT id, name, source, created_at, updated_at FROM accounts WHERE source_id = ?1", rusqlite::params![account_id], |row| Account::try_from(row)).optional()?)
+                Ok(conn
+                    .query_row(
+                        "SELECT * FROM accounts WHERE source_id = ?1",
+                        rusqlite::params![account_id],
+                        |row| Account::try_from(row),
+                    )
+                    .optional()?)
             })
             .await
             .map_err(|e| SqliteError::DatabaseError(Box::new(e)))
@@ -176,17 +175,14 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
     pub async fn get_channel_by_channel_id(
         &self,
         channel_id: &str,
-        source: &str,
     ) -> Result<Option<Channel>, SqliteError> {
         let channel_id = channel_id.to_string();
-        let source = source.to_string();
 
         self.conn
-        .call(move |conn| {
-            let result = conn.prepare("SELECT id, name, source, created_at, updated_at FROM channels WHERE channel_id = ?1 AND source = ?2")?
-                .query_row(rusqlite::params![channel_id, source], |row| {
-                        Channel::try_from(row)
-                    })
+            .call(move |conn| {
+                let result = conn
+                    .prepare("SELECT * FROM channels WHERE channel_id = ?1")?
+                    .query_row(rusqlite::params![channel_id], |row| Channel::try_from(row))
                     .optional()?;
 
                 Ok(result)
@@ -222,9 +218,9 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
             .call(move |conn| {
                 conn.execute(
                     "INSERT INTO messages (id, source, source_id, channel_type, channel_id, account_id, content, role, created_at) 
-						VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
-						ON CONFLICT (id) DO UPDATE SET 
-							content = ?7",
+                        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
+                        ON CONFLICT (id) DO UPDATE SET 
+                            content = ?7",
                     rusqlite::params![
                         msg.id,
                         msg.source.as_str(),
@@ -262,7 +258,7 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
                      channel_id = ?2, 
                      account_id = ?3, 
                      content = ?4, 
-                     role = ?5, 
+                     role = ?5,
                      created_at = CURRENT_TIMESTAMP",
                     [
                         &msg.id,
@@ -297,7 +293,7 @@ impl<E: EmbeddingModel> KnowledgeBase<E> {
 
     pub async fn get_recent_messages_in_channel(
         &self,
-        channel_id: i64,
+        channel_id: String,
         limit: usize,
     ) -> Result<Vec<Message>, SqliteError> {
         self.conn
