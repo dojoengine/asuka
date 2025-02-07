@@ -6,6 +6,7 @@ use rig::Embed;
 use rig_sqlite::{Column, ColumnValue, SqliteVectorStoreTable};
 use rusqlite::Row;
 use serde::{Deserialize, Deserializer};
+use serde_json::Value;
 
 #[derive(Embed, Clone, Debug)]
 pub struct Document {
@@ -13,7 +14,8 @@ pub struct Document {
     pub source_id: String,
     #[embed]
     pub content: String,
-    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub metadata: Option<Value>,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -85,6 +87,7 @@ impl SqliteVectorStoreTable for Document {
             Column::new("source_id", "TEXT").indexed(),
             Column::new("content", "TEXT"),
             Column::new("created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"),
+            Column::new("metadata", "TEXT"),
         ]
     }
 
@@ -97,6 +100,15 @@ impl SqliteVectorStoreTable for Document {
             ("id", Box::new(self.id.clone())),
             ("source_id", Box::new(self.source_id.clone())),
             ("content", Box::new(self.content.clone())),
+            (
+                "metadata",
+                Box::new(
+                    self.metadata
+                        .as_ref()
+                        .map(|m| serde_json::to_string(m).unwrap_or_default())
+                        .unwrap_or_default(),
+                ),
+            ),
         ]
     }
 }
@@ -145,11 +157,24 @@ impl TryFrom<&Row<'_>> for Document {
     type Error = rusqlite::Error;
 
     fn try_from(row: &Row) -> Result<Self, Self::Error> {
+        let metadata_str: Option<String> = row.get(4)?;
+        let metadata = metadata_str
+            .map(|s| serde_json::from_str(&s))
+            .transpose()
+            .map_err(|e| {
+                rusqlite::Error::FromSqlConversionFailure(
+                    4,
+                    rusqlite::types::Type::Text,
+                    Box::new(e),
+                )
+            })?;
+
         Ok(Document {
             id: row.get(0)?,
             source_id: row.get(1)?,
             content: row.get(2)?,
             created_at: row.get(3)?,
+            metadata,
         })
     }
 }
