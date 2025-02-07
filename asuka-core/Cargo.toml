@@ -16,7 +16,7 @@ dotenv = "0.15.0"
 futures = "0.3.31"
 git2 = "0.19.0"
 idna = "1.0.3"
-octocrab = "0.42.1"
+octocrab = "0.43.0"
 rig-core.workspace = true
 rig-sqlite.workspace = true
 rusqlite = { version = "0.32", features = ["bundled", "chrono"] }

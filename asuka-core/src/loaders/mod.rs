@@ -1,6 +1,8 @@
 pub mod github;
 pub mod site;
 
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use thiserror::Error;
 
 use crate::knowledge::Document;
@@ -20,6 +22,24 @@ pub enum LoaderError {
 
     #[error("{0}")]
     SiteError(#[from] site::SiteLoaderError),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SourceType {
+    Github,
+    Site,
+    File,
+    #[cfg(feature = "pdf")]
+    Pdf,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DocumentMetadata {
+    pub source_type: SourceType,
+    pub source_url: String,
+    #[serde(flatten)]
+    pub extra: Option<Value>,
 }
 
 pub struct MultiLoaderConfig {
@@ -49,6 +69,19 @@ impl<M: CompletionModel> MultiLoader<M> {
             }
 
             let (source_type, url) = (parts[0], parts[1]);
+            let metadata = DocumentMetadata {
+                source_type: match source_type {
+                    "github" => SourceType::Github,
+                    "site" => SourceType::Site,
+                    "file" => SourceType::File,
+                    #[cfg(feature = "pdf")]
+                    "pdf" => SourceType::Pdf,
+                    _ => continue,
+                },
+                source_url: url.to_string(),
+                extra: None,
+            };
+
             match source_type {
                 "github" => {
                     let repo = github::GitLoader::new(url.to_string(), &self.config.sources_path)?;
@@ -62,6 +95,7 @@ impl<M: CompletionModel> MultiLoader<M> {
                                 source_id: format!("github:{}", url),
                                 content,
                                 created_at: None,
+                                metadata: Some(serde_json::to_value(&metadata).unwrap()),
                             }),
                     );
                 }
@@ -73,6 +107,7 @@ impl<M: CompletionModel> MultiLoader<M> {
                         source_id: format!("site:{}", url),
                         content,
                         created_at: None,
+                        metadata: Some(serde_json::to_value(&metadata).unwrap()),
                     });
                 }
                 "file" => {
@@ -83,6 +118,7 @@ impl<M: CompletionModel> MultiLoader<M> {
                             source_id: format!("file:{}", url),
                             content,
                             created_at: None,
+                            metadata: Some(serde_json::to_value(&metadata).unwrap()),
                         },
                     ));
                 }
@@ -95,6 +131,7 @@ impl<M: CompletionModel> MultiLoader<M> {
                             source_id: format!("pdf:{}", url),
                             content,
                             created_at: None,
+                            metadata: Some(serde_json::to_value(&metadata).unwrap()),
                         },
                     ));
                 }
