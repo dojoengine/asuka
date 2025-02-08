@@ -180,12 +180,10 @@ pub fn chunk_message(text: &str, max_length: usize, min_chunk_length: usize) -> 
         }
 
         // Start new chunk on headings
-        if line.starts_with('#') {
-            if i > 0 {
-                split_index = text.find(line).unwrap_or(text.len());
-                in_heading = true;
-                break;
-            }
+        if line.starts_with('#') && i > 0 {
+            split_index = text.find(line).unwrap_or(text.len());
+            in_heading = true;
+            break;
         }
 
         // Check if adding this line would exceed max_length
